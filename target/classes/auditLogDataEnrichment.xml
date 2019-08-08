@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="auditLogDataEnrichment_selectDataType" doc:id="b01d2570-f535-4fab-8604-08a9ac8f18f8" >
+		<choice doc:name="Choice Of Platform?" doc:id="0ddbd379-84a8-492a-a997-c9d58ee3cbf5" >
+			<when expression='#[payload.platform == "CoreServices"]'>
+				<flow-ref doc:name="auditLogDataObjectEnricher_core" doc:id="bdfda5e8-2d16-46ec-90c7-6d78dcaa818d" name="auditLogDataObjectEnricher_core"/>
+			</when>
+			<when expression='payload.platform == "Runtime Manager"'>
+				<flow-ref doc:name="auditLogDataObjectEnricher_runtimeManager" doc:id="92ef39bd-e83e-43b7-915e-8e302596ac34" name="auditLogDataObjectEnricher_runtimeManager"/>
+			</when>
+		</choice>
+	</sub-flow>
+</mule>

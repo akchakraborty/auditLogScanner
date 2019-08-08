@@ -1,0 +1,34 @@
+ {
+      "platform": "CoreServices",
+      "action": "Edit",
+      "timestamp": 1551717687153,
+      "userId": "6a612822-d8af-4ebb-8fd9-e5152e3ea6fe",
+      "userName": "janedoe_123",
+      "clientIP": "107.211.131.65",
+      "payload": {
+        "subaction": "Remove user",
+        "properties": {
+          "role": {
+            "role_group_id": "700ce328-a1ba-4fc0-907f-f69d176aead8",
+            "role_group_name": "Developers"
+          },
+          "user": {
+            "user_id": "4a07ca1e-67e5-4f43-855a-9c11531c0ea4",
+            "username": "johndoe_234"
+          }
+        }
+ },
+ "failed": false,
+      "failedCause": null,
+      "objects": [
+        {
+          "objectType": "Role",
+          "objectId": "700ce328-a1ba-4fc0-907f-f69d176aead8",
+          "objectName": "ApiMgrRole",
+          "parentId": null,
+          "parentType": null,
+          "environmentId": null,
+          "environmentName": null
+        }
+      ]
+    }

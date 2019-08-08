@@ -1,0 +1,191 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="environments" format="json">
+      <types:shape format="weave" example="examples/environments.json"><![CDATA[%dw 2.0
+type environments = Array<{|
+  id: String, 
+  name: String, 
+  organizationId: String, 
+  isProduction: Boolean, 
+  "type": String, 
+  clientId: String
+|}> {"MetadataFormat": "json",
+"example": "[{\"id\":\"82c36dc9-0418-432c-9f95-55b7891aab0d\",\"name\":\"Design\",\"organizationId\":\"838d7d6a-cc27-470b-bb59-90b326c5bc9f\",\"isProduction\":false,\"type\":\"design\",\"clientId\":\"4eb18637f3124c529794d8c61bfe9189\"},{\"id\":\"8dafa63d-0567-4973-8521-1d76cd8002ea\",\"name\":\"Sandbox\",\"organizationId\":\"838d7d6a-cc27-470b-bb59-90b326c5bc9f\",\"isProduction\":false,\"type\":\"sandbox\",\"clientId\":\"9f6a072318e34f3da0f2544f2c85b287\"},{\"id\":\"05fa30a6-3f6e-44b8-a025-2ab5c6fd6464\",\"name\":\"svcsDashboardPRD\",\"organizationId\":\"838d7d6a-cc27-470b-bb59-90b326c5bc9f\",\"isProduction\":true,\"type\":\"production\",\"clientId\":\"5eb62115759c4c61b96774473dcbebd1\"}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="overallResponse" format="java">
+      <types:shape format="raml"><![CDATA[#%RAML 1.0 DataType
+type: string]]></types:shape>
+    </types:type>
+    <types:type name="LoginData" format="json">
+      <types:shape format="weave" example="examples/exmapleforlogin.json"><![CDATA[%dw 2.0
+type LoginData = {|
+  platform: String, 
+  action: String, 
+  timestamp: Number {"typeId": "double"}, 
+  userId: String, 
+  userName: String, 
+  clientIP: String, 
+  payload: Null, 
+  failed: Boolean, 
+  failedCause: Null, 
+  objects: Array<{|
+    objectType: String, 
+    objectId: String, 
+    objectName: String, 
+    parentId: Null, 
+    parentType: Null, 
+    environmentId: Null, 
+    environmentName: Null
+  |}>
+|} {"MetadataFormat": "json",
+"example": "{\"platform\":\"CoreServices\",\"action\":\"Logout\",\"timestamp\":1554480000285,\"userId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"userName\":\"prashantpth5\",\"clientIP\":\"73.72.222.176\",\"payload\":null,\"failed\":false,\"failedCause\":null,\"objects\":[{\"objectType\":\"User\",\"objectId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"objectName\":\"prashantpth5\",\"parentId\":null,\"parentType\":null,\"environmentId\":null,\"environmentName\":null},{\"objectType\":\"User\",\"objectId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"objectName\":\"prashantpth5\",\"parentId\":null,\"parentType\":null,\"environmentId\":null,\"environmentName\":null}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="Permission" format="json">
+      <types:shape format="weave" example="examples/Example for Permission change.json"><![CDATA[%dw 2.0
+type Permission = {|
+  platform: String, 
+  action: String, 
+  timestamp: Number {"typeId": "double"}, 
+  userId: String, 
+  userName: String, 
+  clientIP: String, 
+  payload: {|
+    subaction: String, 
+    properties: {|
+      role_id: String, 
+      context_params: {|
+        org: String, 
+        user: String
+      |}, 
+      name: String
+    |}
+  |}, 
+  failed: Boolean, 
+  failedCause: Null, 
+  objects: Array<{|
+    objectType: String, 
+    objectId: String, 
+    objectName: Null, 
+    parentId: Null, 
+    parentType: Null, 
+    environmentId: Null, 
+    environmentName: Null
+  |}>
+|} {"MetadataFormat": "json",
+"example": "{\"platform\":\"CoreServices\",\"action\":\"Permissions change\",\"timestamp\":1549480752649,\"userId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"userName\":\"panderson_svcsDB\",\"clientIP\":\"167.242.50.21\",\"payload\":{\"subaction\":\"Add permissions\",\"properties\":{\"role_id\":\"95763f50-e7b4-400e-80bc-e3231589e1b3\",\"context_params\":{\"org\":\"0da8eb02-37cf-4243-bad4-8329ca679f2b\",\"user\":\"5fedd562-da11-49af-8741-276a73441a4\"},\"name\":\"Organization User\"}},\"failed\":false,\"failedCause\":null,\"objects\":[{\"objectType\":\"User\",\"objectId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"objectName\":null,\"parentId\":null,\"parentType\":null,\"environmentId\":null,\"environmentName\":null},{\"objectType\":\"User\",\"objectId\":\"5fedd562-da11-49af-8741-276a73441a40\",\"objectName\":null,\"parentId\":null,\"parentType\":null,\"environmentId\":null,\"environmentName\":null}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="EditAddRole" format="json">
+      <types:shape format="weave" example="examples/Edit_addrole.json"><![CDATA[%dw 2.0
+type EditAddRole = {|
+  platform: String, 
+  action: String, 
+  timestamp: Number {"typeId": "double"}, 
+  userId: String, 
+  userName: String, 
+  clientIP: String, 
+  payload: {|
+    subaction: String, 
+    properties: {| role: {| role_group_id: String |} |}
+  |}, 
+  failed: Boolean, 
+  failedCause: Null, 
+  objects: Array<{|
+    objectType: String, 
+    objectId: String, 
+    objectName: Null, 
+    parentId: Null, 
+    parentType: Null, 
+    environmentId: Null, 
+    environmentName: Null
+  |}>
+|} {"MetadataFormat": "json",
+"example": "{\"platform\":\"CoreServices\",\"action\":\"Edit\",\"timestamp\":1548092063984,\"userId\":\"6a612822-d8af-4ebb-8fd9-e5152e3ea6fe\",\"userName\":\"panderson_svcsDB\",\"clientIP\":\"204.14.236.152\",\"payload\":{\"subaction\":\"Add role\",\"properties\":{\"role\":{\"role_group_id\":\"700ce328-a1ba-4fc0-907f-f69d176aead8\"}}},\"failed\":false,\"failedCause\":null,\"objects\":[{\"objectType\":\"User\",\"objectId\":\"2e7e60db-c206-46a5-8fb4-43deee664278\",\"objectName\":null,\"parentId\":null,\"parentType\":null,\"environmentId\":null,\"environmentName\":null}]}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="EditRemoveUser" format="json">
+      <types:shape format="weave" example="examples/edit_removeuser.json"><![CDATA[%dw 2.0
+type EditRemoveUser = {|
+  platform: String, 
+  action: String, 
+  timestamp: Number {"typeId": "double"}, 
+  userId: String, 
+  userName: String, 
+  clientIP: String, 
+  payload: {|
+    subaction: String, 
+    properties: {|
+      role: {|
+        role_group_id: String, 
+        role_group_name: String
+      |}, 
+      user: {|
+        user_id: String, 
+        username: String
+      |}
+    |}
+  |}
+|} {"MetadataFormat": "json",
+"example": "{\"platform\":\"CoreServices\",\"action\":\"Edit\",\"timestamp\":1551717687153,\"userId\":\"6a612822-d8af-4ebb-8fd9-e5152e3ea6fe\",\"userName\":\"panderson_svcsDB\",\"clientIP\":\"107.211.131.65\",\"payload\":{\"subaction\":\"Remove user\",\"properties\":{\"role\":{\"role_group_id\":\"700ce328-a1ba-4fc0-907f-f69d176aead8\",\"role_group_name\":\"Developers\"},\"user\":{\"user_id\":\"4a07ca1e-67e5-4f43-855a-9c11531c0ea4\",\"username\":\"pavan_jonnavithula\"}}}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#b12943d4-e811-441c-b735-172ef44ac216"/>
+  <types:enrichment select="#347243d8-380f-415a-b6a5-386c02920b7d"/>
+  <types:enrichment select="#fdaacb6b-3e36-4ee5-aac4-1f8f587b7354"/>
+  <types:enrichment select="#91b708d3-c031-4859-acb8-e78f397863fb">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="LoginData"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="LoginData"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#bd597729-7042-45b4-95ea-eb3a626d8a58">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="EditAddRole"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#300d1b5e-96cd-4079-8bcc-16db64642d34">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="EditRemoveUser"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="EditRemoveUser"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#dc5e9d35-7d7a-4989-9295-e309b55a072e"/>
+  <types:enrichment select="#7eafa8a8-d76e-4873-81c2-016d1f2b5149">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="EditAddRole"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

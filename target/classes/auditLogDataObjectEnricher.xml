@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="auditLogDataObjectEnricher_core" doc:id="91b07d13-30e5-41f4-a153-66a033f145a7" >
+		<set-variable value="#[payload]" doc:name="store payload for future enrichment" doc:id="e2c5a0a3-fda4-42e6-ab30-4af2680189d8" variableName="initpayload"/>
+		<ee:transform doc:name="get lookup keys from payload" doc:id="dc5e9d35-7d7a-4989-9295-e309b55a072e">
+					<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json skipNullOn ="everywhere"
+
+var roleObject = (payload.objects filter ($.objectType == "Role"))[0]
+---
+{
+	//roleId
+	(	if ( payload.payload.properties.role_id != null)
+   			roleId: payload.payload.properties.role_id
+   		else if (roleObject.objectId != null)
+   			roleId: roleObject.objectId
+  	 	else 
+  	 		null
+  	 ),
+  	 
+  	//roleName returned by the input payload can be reused when the role is deleted and not returned on groupe Role OS
+  	(	if (roleObject.objectName != null)
+			roleName: roleObject.objectName
+  		else 
+  			null
+  	),
+  	
+   	//roleGroupId
+   	(
+   		if(payload.payload.properties.role.role_group_id !=null)
+   			roleGroupId : payload.payload.properties.role.role_group_id
+   		else 
+   			null
+   	),
+   	
+  	//roleGroupName returned by the input payload can be reused when the role is deleted and not returned on groupe Role OS
+  	(	if (payload.payload.properties.role.name != null)
+			roleGroupName: payload.payload.properties.role.name
+  		else 
+  			null
+  	),   
+	
+	environmentId: (payload.objects filter ($.objectType == "Environment"))[0].objectId,
+	userId:(payload.objects filter ($.objectType == "User"))[0].objectId,
+	
+	//orgId
+	( 	if (payload.payload.properties.organizationId != null  )
+	    		orgId: payload.payload.properties.organizationId
+        	else if  (payload.payload.properties.context_params.org != null)
+    			orgId:payload.payload.properties.context_params.org		
+    	  	else 
+    	  		null
+	),
+	
+	//masterOrgId
+	( 	if (payload.payload.properties.masterOrganizationId != null  )
+	    		masterOrgId: payload.payload.properties.masterOrganizationId
+       	else 
+       		null
+	),
+	
+	//applicationId:"",
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<choice doc:name="role lookup needed ?" doc:id="5a83fc49-c5a1-4b7f-8ebd-870635468c7a">
+			<when expression="#[payload.roleId !=null]">
+				<flow-ref doc:name="auditLogDataObjectEnricher_lookupRole" doc:id="9bda8ee8-c120-4a29-99f2-ce615a6bf363" name="auditLogDataObjectEnricher_lookupRole"/>
+			</when>
+		</choice>
+		<choice doc:name="user lookup  needed ?" doc:id="57e8580b-3b22-4e73-9fae-d562e6dfdb75" >
+			<when expression="#[payload.userId != null]">
+				<flow-ref doc:name="auditLogDataObjectEnricher_lookupUser" doc:id="64793832-17b0-4de4-ac0a-ad1993e50e3e" name="auditLogDataObjectEnricher_lookupUser"/>
+			</when>
+		</choice>
+		<choice doc:name="if environment lookup needed ?" doc:id="3991466c-08c3-4850-81b9-16f0e734f47b" >
+			<when expression="#[payload.environmentId != null]">
+				<flow-ref doc:name="auditLogDataObjectEnricher_lookupEnvironment" doc:id="b9f0d213-6fe5-4205-8a2c-32fb6c75d0e5" name="auditLogDataObjectEnricher_lookupEnvironment"/>
+			</when>
+		</choice>
+		<flow-ref doc:name="auditLogDataObjectEnricher_continueProcessing" doc:id="4062518e-4e77-44d7-97fa-ec01292d79db" name="auditLogDataObjectEnricher_continueProcessing"/>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_continueProcessing" doc:id="5d3c57d0-486e-456f-b553-16ec341b55aa" >
+		<choice doc:name="org lookup needed ?" doc:id="cd5a72b0-7767-4ff1-a4aa-32010bd96e09" >
+			<when expression="payload.orgId !=null or payload.masterOrgId != null">
+				<flow-ref doc:name="auditLogDataObjectEnricher_lookupOrg" doc:id="625cb2e3-ce15-48d8-b1af-407f65b03327" name="auditLogDataObjectEnricher_lookupOrg"/>
+			</when>
+		</choice>
+		<choice doc:name="group role id lookup needed ?" doc:id="7075ea5b-3ef5-4e7e-b548-7f932ad7fdcd" >
+			<when expression="#[payload.roleGroupId != null]">
+				<flow-ref doc:name="auditLogDataObjectEnricher_lookuproleGroupId" doc:id="61e76168-5e59-4df2-8860-b92939aada34" name="auditLogDataObjectEnricher_lookuproleGroupId"/>
+			</when>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="49ece4ad-9a9c-4b5e-ac8e-d9811cf74d0a" message="#[vars.groupRole.name]"/>
+		<ee:transform doc:name="enrichPayload" doc:id="b6672cc9-0065-4e0d-9f9e-cfcc90b3848b">
+			<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+import java!java::util::Date
+fun normalizeAndFormat(thisdate) = 
+	 (Date::new(thisdate) as DateTime {format:"yyyy-MM-dd'T'HH:mm:ss.SSSZ"})
+
+output application/json skipNullOn = "everywhere"
+---
+{
+	platform: 		vars.initpayload.platform,
+	action: 			vars.initpayload.action,
+	timestamp: 		normalizeAndFormat(vars.initpayload.timestamp),
+	userId: 			vars.initpayload.userId,
+	userName: 		vars.initpayload.userName,
+	clientIP: 		vars.initpayload.clientIP,
+	orgId: 			vars.thisOrgId,
+	payload: {
+		subaction: 				vars.initpayload.payload.subaction,
+        id: 						vars.initpayload.payload.id,
+       	organizationId: 			vars.initpayload.payload.organizationId,
+       	(if (vars.initpayload.payload.organizationId != null)
+       		orgName: 			vars.org.name
+       		else null
+       	),
+        
+        groupId: 				vars.initpayload.payload.groupId,
+       	assetId: 				vars.initpayload.payload.assetId,
+        version: 				vars.initpayload.payload.version,
+        versionGroup: 			vars.initpayload.payload.versionGroup,
+       	(if (vars.initpayload.createdDate != null) 
+       		createdDate: 		normalizeAndFormat(vars.initpayload.payload.createdDate) 
+       		else null
+       	),
+       	
+       	(if (vars.initpayload.updatedDate != null)
+        	  	updatedDate: 		normalizeAndFormat(vars.initpayload.payload.updatedDate)
+        		else null
+        ),
+        	
+        	name:  					vars.initpayload.payload.name,
+       	'type': 					vars.initpayload.payload.'type',
+        status: 					vars.initpayload.payload.status,
+        description:				vars.initpayload.payload.description,
+        isCompleted:				vars.initpayload.payload.isCompleted,
+        isSnapshot: 				vars.initpayload.payload.isSnapshot,
+        isLatestReleaseVersion:	vars.initpayload.payload.isLatestReleaseVersion,
+        isLatestPublicVersion: 	vars.initpayload.payload.isLatestPublicVersion,
+        isLatestVersion: 		vars.initpayload.payload.isLatestVersion,
+        isPublic: 				vars.initpayload.payload.isPublic,
+        masterOrganizationId: 	vars.initpayload.payload.masterOrganizationId,
+        (if (vars.initpayload.payload.masterOrganizationId != null )
+	        	masterOrgName : 		vars.masterorg.name
+        		else null
+        ), 
+        
+        createdById: 			vars.initpayload.payload.createdById, 
+        (if (vars.initpayload.payload.createdById != null )
+          	username : 			vars.user
+          	else null
+         ),
+        
+        ranking: 				vars.initpayload.payload.ranking,
+        (if (vars.initpayload.payload.properties.role_id != null or
+        		vars.initpayload.payload.properties.role != null or
+        		 vars.initpayload.payload.properties.context_params.envId !=null or 
+        		 vars.initpayload.payload.properties.context_params.org !=null)
+        /* these  properties   values gets generated when action is Permission Change or Edit  */
+        properties: {
+        		name: 					vars.initpayload.payload.properties.'name',
+          	role_id: 				vars.initpayload.payload.properties.role_id,
+          	(if (vars.initpayload.payload.properties.role_id != null) 
+          		role : 				vars.role.name
+          		else null
+          	),
+          	context_params: {
+            		envId:  					vars.initpayload.payload.properties.context_params.envId,
+            		(if (vars.initpayload.payload.properties.context_params.envId != null) 
+            			envName:					vars.env.name
+            			else null
+            		),
+	            org: 						vars.initpayload.payload.properties.context_params.org,
+	           	(if (vars.initpayload.payload.properties.context_params.org != null)
+           			orgName : 				vars.org.name 
+           			else null
+           		)
+            	},
+            	(if (vars.initpayload.payload.properties.role.role_group_id != null)
+            	role: {
+            		role_group_id: 		vars.initpayload.payload.properties.role.role_group_id,
+            		role_group_name: 	vars.groupRole.name 
+			} else null),
+            	(if (vars.initpayload.payload.properties.role.user_id != null)
+	       	user: {
+				user_id: 				vars.initpayload.payload.properties.user.user_id,
+	            	username: 				vars.initpayload.payload.properties.user.username
+			} else null),
+		}
+       	else properties: 		vars.initpayload.payload.properties),
+        },
+        /* these properties are used when action is Edit */
+        
+      
+      	failed: 			vars.initpayload.failed,
+      	failedCause: 	vars.initpayload.failedCause,
+     	objects: 		vars.initpayload.objects map ( object , indexOfObject ) -> {
+          	objectType: 		object.objectType,
+          	objectId: 		object.objectId,
+        		("environment": vars.env.name) if (object.objectType == "Environment") ,
+        		( "username" : vars.user.username) if (object.objectType == "User"),
+          	("role" : vars.role.name) if (object.objectType == "Role"),
+          	//objectName :obßject.objectName
+         }
+}        
+        
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_lookuproleGroupId" doc:id="72382197-0272-4596-b692-1bbb361ae162">
+		<os:retrieve doc:name="retrieve grouprole" doc:id="7ed0e65a-d273-46de-9f86-5caff0f2a3d4" key="#[payload.roleGroupId]" objectStore="roleGroup_store" target="groupRole">
+			<os:default-value ><![CDATA[#[name: payload.roleGroupName]]]></os:default-value>
+				</os:retrieve>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_lookupRole" doc:id="0bbb8334-83bd-4844-a508-f84ca70e55f6" >
+		<os:retrieve doc:name="retrieve role" doc:id="6630dad8-413c-4cfe-a1d5-de1b733a8571" key="#[payload.roleId]" target="role" objectStore="roleGroup_store">
+			<os:default-value ><![CDATA[#[name: payload.roleName]]]></os:default-value>
+		</os:retrieve>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_lookupUser" doc:id="7d0b0ab3-8f47-4d02-93c5-f4407be8c95d" >
+		<os:retrieve doc:name="retrieve user" doc:id="2be0cd10-e7ec-4ab6-a1b4-1f32fb450ec3" key="#[payload.userId]" objectStore="user_store" target="user">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_lookupOrg" doc:id="d14b4209-6406-4510-905f-2950dfa9c726" >
+		<os:retrieve doc:name="retrieve org" doc:id="d5b8e76a-19fd-411a-967b-5cd7a808eb7c" key="#[payload.orgId]" objectStore="businessGroup_store" target="org">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="If masterOrg exists" doc:id="8352d7bd-f384-4051-a0be-dac4f2b40b2a" >
+			<when expression="payload.masterOrgId != null">
+				<os:retrieve doc:name="retrieve master org" doc:id="ee7e5f07-c0e5-49e2-898c-3429c4b1d9b4" key="#[payload.masterOrgId]" target="masterOrg" objectStore="businessGroup_store">
+			<os:default-value><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+			</when>
+		</choice>
+	</sub-flow>
+	<sub-flow name="auditLogDataObjectEnricher_lookupEnvironment" doc:id="ec70d716-3f73-412f-98a0-ee6aebd73610" >
+		<os:retrieve doc:name="retrieve enviroment" doc:id="be977508-e893-4057-874b-3a01bf003c62" key="#[payload.environmentId]" objectStore="environment_store" target="env">
+			<os:default-value ><![CDATA[#[0]]]></os:default-value>
+		</os:retrieve>
+	</sub-flow>
+</mule>

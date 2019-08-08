@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd">
+	<flow name="auditLogReading_schedule" doc:id="9e23f83c-61d2-45d5-9b1a-c59589ea4d1d">
+		<scheduler doc:name="Scheduler" doc:id="9d261f1f-d139-4b08-bec3-4e9c9d764962">
+			<scheduling-strategy>
+				<fixed-frequency frequency="${schedulerlogreading.scheduleSeconds}" startDelay="${schedulerlogreading.startingDelay}" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="auditLogReading_queryAPI" doc:id="bf2c2251-c776-4a30-a887-674d8a1adff8" name="auditLogReading_queryAPI" />
+	</flow>
+	<sub-flow name="auditLogReading_queryAPI" doc:id="87b35f84-6f80-401e-9b6a-8339b983f6e1" >
+		<set-variable value="#[p('rootOrganizationID')]" doc:name="rootOrgId" doc:id="5a350af5-efa7-4eb4-aa54-995caaedf992" variableName="rootOrgId" />
+		<os:retrieve-all-keys doc:name="Retrieve all keys" doc:id="bb8ad95b-f574-433d-af00-7103f8abf414" target="allOrgIDs" objectStore="businessGroup_store"/>
+		<set-variable value="irrelevant - w're just establishing the scope for this var" doc:name="startTime" doc:id="8ddf7563-0e50-4573-9c06-c6f9422e6731" variableName="startTime" />
+		<set-variable value="irrelevant - we're just establishing the scope for this var" doc:name="endTime" doc:id="7660c893-a1a8-4672-ac4d-4014f9c5227b" variableName="endTime" />
+		<set-variable value="#[attributes.headers.lookupneeded]" doc:name="lookupneeded" doc:id="594fd0c9-c84e-4c0e-abf3-0eb7d15888ed" variableName="lookupneeded"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d5741ca3-99dd-4517-b7a2-9aca8085610a" message="#[vars.lookupneeded]"/>
+		<flow-ref doc:name="watermark_buildTimeRange" doc:id="8d468263-09a2-441d-814f-9e2812b368f0" name="watermark_buildTimeRange" target="startEndTimeMap"/>
+		<flow-ref doc:name="auditLogReading_buildQueryPOSTBody" doc:id="52aac447-8d20-46be-b92e-742fc9b32a48" name="auditLogReading_buildQueryPOSTBody" target="queryPOSTBody"/>
+		<ee:transform doc:name="get list of all orgIDs" doc:id="1baa8080-a8ea-4de0-9fdf-c438a95a6046">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+vars.allOrgIDs]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[{}]" doc:name="initialize overall response" doc:id="a4eb2c82-7b89-4126-be0b-2f69bf3f5523" variableName="overallResponse" />
+		<set-variable value="#[true]" doc:name="allGood" doc:id="86b91755-0307-438d-b446-4c9acf17711f" variableName="allGood"/>
+		<foreach doc:name="For Each BG" doc:id="c59d3813-4418-40a6-b265-c09effb731bf" collection="#[vars.allOrgIDs]">
+			<set-variable value="#[payload]" doc:name="thisOrgId" doc:id="315623b2-3984-454b-a680-e014bc1e9db6" variableName="thisOrgId"/>
+			<flow-ref doc:name="loginToken_getToken" doc:id="616ace47-7c3f-477e-a68a-44559cd16c59" name="loginToken_getToken" target="token" />
+			<try doc:name="Try" doc:id="2c382f3f-0b45-4070-92f8-0fce449c0286" >
+				<http:request method="POST" doc:name="queryAuditLogAPI" config-ref="anypointRequester" doc:id="188c7977-7947-4a94-aefd-554ef41c899d" path="/audit/v2/organizations/{orgId}/query" outputMimeType="application/json">
+				<http:body ><![CDATA[#[vars.queryPOSTBody]]]></http:body>
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token,
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : payload
+}]]]></http:uri-params>
+		</http:request>
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="07008710-899a-4a1d-a34d-44552f3aeef4" >
+						<set-variable value="#[false]" doc:name="set allGood to false" doc:id="2b58c096-7d1e-414d-8a02-feb2ac472429" variableName="allGood"/>
+					</on-error-propagate>
+				</error-handler>
+			</try>
+			<choice doc:name="Choice" doc:id="7cf4ba1f-3c26-41b6-86ba-223f7781994e" >
+				<when doc:id="65eccc15-a280-43b5-82de-355d5cb64092" expression='#[vars.lookupneeded == "true"]'>
+					<async doc:name="Async" doc:id="a502baf0-062c-4099-86ce-2623be585b0e">
+				<foreach doc:name="For Each" doc:id="6e574b29-fbbd-4b7b-a5d3-67fb80c2e26c" collection="#[payload.data]">
+					<flow-ref doc:name="auditLogDataEnrichment_selectDataType" doc:id="cb06481f-4c71-4822-981a-cd95f79e0914" name="auditLogDataEnrichment_selectDataType" />
+				</foreach>
+			</async>
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Transform Message" doc:id="f6d8b342-7284-4126-a6db-5ecc07b0f1c1" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</otherwise>
+			</choice>
+			<ee:transform doc:name="accumulate responses" doc:id="fdaacb6b-3e36-4ee5-aac4-1f8f587b7354">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="overallResponse"><![CDATA[%dw 2.0
+output application/java
+---
+vars.overallResponse ++ {(vars.thisOrgId): payload}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<choice doc:name="is all good?" doc:id="db26a225-3fcf-4725-9974-cf55adc37782" >
+			<when expression="#[vars.allGood]">
+				<flow-ref doc:name="watermark_updateLastScannedTime" doc:id="0fb537ae-0869-469a-9a7b-e825fed089c5" name="watermark_updateLastScannedTime" />
+				<ee:transform doc:name="make payload" doc:id="0e23c32b-6f9a-48d0-8325-36b2a54268c7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.overallResponse]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+		</choice>
+	</sub-flow>
+	<sub-flow name="auditLogReading_buildQueryPOSTBody" doc:id="d49fb2b2-2d95-49e8-8713-48f2b9b85bd3">
+		<ee:transform doc:name="create POST body" doc:id="b12943d4-e811-441c-b735-172ef44ac216">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+  {
+    "startDate": "2011-11-02T02:50:12.208Z",
+    "startDate2": vars.startEndTimeMap.startTime as DateTime  {format:"yyyy-MM-dd'T'HH:mm:ss.SSSZ"},
+    "endDate": vars.startEndTimeMap.endTime as DateTime  {format:"yyyy-MM-dd'T'HH:mm:ss.SSSZ"},
+    "platforms": [],
+    "objectTypes": [],
+    "actions": [],
+    "objectIds": [],
+    "userIds": [],
+    "ascending": false,
+    "offset": 0,
+    "limit": 200
+  }]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>

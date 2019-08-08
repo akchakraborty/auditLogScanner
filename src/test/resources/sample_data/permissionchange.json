@@ -1,0 +1,31 @@
+{
+      "platform": "CoreServices",
+      "action": "Permissions change",
+      "timestamp": 1549480690452,
+      "userId": "6a612822-d8af-4ebb-8fd9-e5152e3ea6fe",
+      "userName": "panderson_svcsDB",
+      "clientIP": "167.242.50.21",
+      "payload": {
+        "subaction": "Add permissions",
+        "properties": {
+          "role_id": "8f77b09c-5376-4bfd-9e9d-5dfc1b6f7d3e",
+          "context_params": {
+            "org": "0da8eb02-37cf-4243-bad4-8329ca679f2b"
+          },
+          "name": "Anypoint Monitoring User"
+        }
+      },
+      "failed": false,
+      "failedCause": null,
+      "objects": [
+        {
+          "objectType": "User",
+          "objectId": "6a612822-d8af-4ebb-8fd9-e5152e3ea6fe",
+          "objectName": null,
+          "parentId": null,
+          "parentType": null,
+          "environmentId": null,
+          "environmentName": null
+        }
+      ]
+    }

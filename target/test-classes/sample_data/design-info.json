@@ -1,0 +1,13 @@
+{
+  "sampleData": {
+    "b6672cc9-0065-4e0d-9f9e-cfcc90b3848b": {
+      "payload": "sample_data/unknown_1.dwl"
+    },
+    "8a89292e-306d-4c5d-90a3-5e60f9838360": {
+      "payload": "sample_data/list_json.json"
+    },
+    "7394ca02-640e-4d64-87b9-ecb0336d3c6c": {
+      "vars-thisGSheetData": "sample_data/Message.dwl"
+    }
+  }
+}

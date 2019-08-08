@@ -1,0 +1,14 @@
+[
+  {
+    "thing": "appleTree",
+    "height": 12
+  },
+  {
+    "thing": "pearTree",
+    "height": 9
+  },
+  {
+    "thing": "bicycle",
+    "wheels": 2
+  }
+]

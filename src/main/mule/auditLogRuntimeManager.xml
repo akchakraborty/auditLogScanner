@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="auditLogDataObjectEnricher_runtimeManager" doc:id="5590ff60-829d-4e39-a1c1-09d3faff54d7" >
+		<set-variable value="#[payload]" doc:name="payload for future enrichment" doc:id="e71b87f6-64df-43b4-a853-0e71ca63fa3d" variableName="initpayload" />
+		<ee:transform doc:name="enrich payload" doc:id="7eafa8a8-d76e-4873-81c2-016d1f2b5149" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json skipNullOn ="everywhere"
+
+import java!java::util::Date
+fun normalizeAndFormat(thisdate) = 
+	 (Date::new(thisdate) as DateTime {format:"yyyy-MM-dd'T'HH:mm:ss.SSSZ"})
+
+---
+{
+	platform: payload.platform,
+	action: payload.action,
+	datetime: normalizeAndFormat(payload.timestamp),
+	timestamp: payload.timestamp,
+	userId: payload.userId,
+	userName: payload.userName,
+	clientIP: payload.clientIP,
+	payload: payload.payload,
+	failed: payload.failed,
+	failedCause: payload.failedCause,
+	objects: payload.objects map ( object , indexOfObject ) -> {
+		objectType: object.objectType,
+		objectId: object.objectId,
+		applicationName: object.objectName,
+		environmentId: object.environmentId,
+        environmentName: object.environmentName
+		
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

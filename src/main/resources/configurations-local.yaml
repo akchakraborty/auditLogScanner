@@ -1,0 +1,21 @@
+#api - configurations
+someProperty : "someValue"
+
+https:
+   private.port : "8082"
+
+api:
+  host : "0.0.0.0"
+
+
+# appcentrica - mulesoft-practice
+rootOrganizationID : "cd7781cd-96ae-4ebf-a229-3767464e55bc"
+anypoint.user.name : "amrisinghbains"   
+
+schedulercacheinit:
+    scheduleDays: "10000"
+    startingDelay: "0"
+  
+schedulerlogreading: 
+  scheduleSeconds: "300"
+  startingDelay: "30"

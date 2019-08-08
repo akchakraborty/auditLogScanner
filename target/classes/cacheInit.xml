@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns:os="http://www.mulesoft.org/schema/mule/os"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="cacheInit_onceOnly" doc:id="d035b174-9b98-4122-9466-9e3a6deade02" doc:description="this flow executes once in 10000 days (i.e. only at startup). If this app runs for 10,000 days then this flow will execute again - no harm done, it’s very infrequent." initialState="started">
+		<scheduler doc:name="scheduleOnceOnly" doc:id="1e1d8b05-2b90-4891-9925-208c2b33f919" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${schedulercacheinit.scheduleDays}" timeUnit="DAYS" startDelay="${schedulercacheinit.startingDelay}"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="cacheInit_controller" doc:id="64ec1e60-5f07-432d-9c4f-f512ad2aa119" name="cacheInit_controller"/>
+	</flow>
+	<sub-flow name="cacheInit_controller"
+             doc:id="80b7c097-e802-49f3-ae23-662e453f10d1">
+      <set-variable value="#[p('rootOrganizationID')]" doc:name="start with root-orgId" doc:id="1717a5d9-e73d-4631-9a5c-8a094064a056" variableName="orgId" />
+		<flow-ref doc:name="cacheInit_getUsers" doc:id="2a73dc0b-5e9f-4fe8-a096-1d2a7745823e" name="cacheInit_getUsers" />
+		<flow-ref doc:name="cacheInit_getRoleGroups" doc:id="8b6ed7c1-30ef-4865-9166-8b0c774b2066" name="cacheInit_getRoleGroups" />
+		<flow-ref doc:name="cacheInit_getOrganizationByID" doc:id="0a9c8737-2372-446d-94ae-eded25116322" name="cacheInit_getOrganizationByID" />
+		<os:store doc:name="store root org by ID" doc:id="7ba60577-0874-4b91-ae04-274640190200" key="#[payload.id]" objectStore="businessGroup_store" />
+		<flow-ref doc:name="cacheInit_handleOrganization_environments" doc:id="73176142-ed3a-4810-9ff8-39f08a0eaf15" name="cacheInit_handleOrganization_environments" />
+		<flow-ref doc:name="cacheInit_handleSubOrgs" doc:id="cf24c48b-49c1-44d5-87fa-8347a550a3bc" name="cacheInit_handleSubOrgs" />
+   </sub-flow>
+   <sub-flow name="cacheInit_getUsers" doc:id="0f0c174d-c3c7-49de-b8a2-0e7926055150">
+      <flow-ref doc:name="loginToken_getToken" doc:id="0cbc7136-0b6a-4802-90d3-fce6c37f4efa" name="loginToken_getToken" target="token" />
+      <http:request method="GET" doc:name="get users" config-ref="anypointRequester" doc:id="26ea1a6a-8593-438a-a3e8-4a10f236a977" path="/accounts/api/organizations/{orgId}/users">
+         <http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId
+}]]]></http:uri-params>
+      </http:request>
+      <foreach doc:name="For Each user" doc:id="e83bc9ef-0c03-4bd0-a5d7-11c42e6425e1" collection="#[payload.data]">
+         <os:store doc:name="Store user byUUID" doc:id="ed145552-db9d-4821-914f-e820e387edb2" key="#[payload.id]" objectStore="user_store" />
+         <os:store doc:name="Store user by user-name - could be business-defined userID" doc:id="8051dd2c-2dfa-45a9-84ec-70ac09533c2f" key="#[payload.username]" objectStore="user_store" />
+      </foreach>
+   </sub-flow>
+	<sub-flow name="cacheInit_getRoleGroups" doc:id="8920b46c-58ad-40e8-8d0d-41a70efff7a5">
+        <flow-ref doc:name="loginToken_getToken" doc:id="d186d285-f3c1-47e5-a4f9-39a124ddeccf" name="loginToken_getToken" target="token" />
+      <http:request method="GET" doc:name="get roleGroups" doc:id="b1a90a22-06da-4079-b731-dd3e385d3402" config-ref="anypointRequester" path="/accounts/api/organizations/{orgId}/rolegroups">
+         <http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId
+}]]]></http:uri-params>
+      </http:request>
+    <foreach doc:name="For Each role-group" doc:id="8c1b70fa-aee8-4896-baa2-ae1d3bd307ac" collection="#[payload.data]">
+      <os:store doc:name="Store role_group by role_group_id" doc:id="780e17bd-972f-452b-b70d-f1fb8995cdd7" key="#[payload.role_group_id]" objectStore="roleGroup_store" />
+    </foreach>
+             
+  </sub-flow>
+	<sub-flow name="cacheInit_getOrganizationByID" doc:id="5084f397-4460-4032-bb5f-b6d6e47bca28">
+      <flow-ref doc:name="loginToken_getToken" doc:id="86d5a881-ca78-4621-b5a2-fa047a295388" name="loginToken_getToken" target="token" />
+      <http:request method="GET" doc:name="get organization by ID" doc:id="f6cc21a8-cbb9-45f5-af28-cb973cb5a362" config-ref="anypointRequester" path="/accounts/api/organizations/{orgId}">
+         <http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token
+}]]]></http:headers>
+         <http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId
+}]]]></http:uri-params>
+      </http:request>
+      <os:store doc:name="store current org. by ID" doc:id="26b2010f-208f-40f9-be9a-67fd642428c1" key="#[payload.id]" objectStore="businessGroup_store" />
+<!--       <os:store doc:name="store current org by name"
+                doc:id="ea772b13-6d51-4c2b-9ace-223f5e462d76"
+                key="#[payload.name]" objectStore="BG_store"/> -->
+   </sub-flow>
+	<sub-flow name="cacheInit_handleOrganization_environments" doc:id="e0e8dc38-6937-424f-90c2-0690f45e2db9">
+      <set-variable value="#[payload]" doc:name="save organization" doc:id="941722a9-a801-45fd-8e6b-f614a040d169" variableName="currentOrganization" />
+      <set-variable value="#[payload.environments]" doc:name="environments" doc:id="0ace1d17-945e-4402-b60f-fd5e9f1fdd20" variableName="environments" />
+      <foreach doc:name="For Each environment" doc:id="25295349-4532-4ca6-8b30-3086660183ae" collection="#[vars.environments]">
+         <os:store doc:name="cache environment by ID" doc:id="7021498a-d33b-4603-8f0b-a20d97754f08" key="#[payload.id]" objectStore="environment_store" />
+         <os:store doc:name="cache environment by name" doc:id="6a59376a-c2c7-45ad-86b5-26c6cfd1a18f" key="#[payload.name]" objectStore="environment_store" />
+			<flow-ref doc:name="cacheInit_getApplications" doc:id="8e11af8b-08fc-43e6-9b98-baf8f2c40dfb" name="cacheInit_getApplications" />
+      </foreach>
+   </sub-flow>
+	<sub-flow name="cacheInit_getApplications" doc:id="91b85964-359d-434e-a423-aff1bad6ed59">
+      <flow-ref doc:name="loginToken_getToken" doc:id="a1dee63c-ff99-4e54-b374-c10057c978d0" name="loginToken_getToken" target="token" />
+      <http:request method="GET" doc:name="get applications" doc:id="aea5fabd-e424-4cc9-b505-b16d89b0ace5" config-ref="anypointRequester" path="/cloudhub/api/applications">
+         <http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ vars.token,
+	"X-ANYPNT-ENV-ID" : payload.id,
+	"X-ANYPNT-ORG-ID" : vars.currentOrganization.id
+}]]]></http:headers>
+      </http:request>
+		<foreach doc:name="For Each Application" doc:id="6ecd95b8-19b7-46f9-a6e7-87fc6f86999c">
+			<os:store doc:name="Store application by id" doc:id="a3efb3d9-31f1-4374-8ebf-92a515d4a1e6" key="#[payload.id]" objectStore="application_store" />
+			<os:store doc:name="Store application by domain" doc:id="923c70ef-38ac-41d2-ab72-99526e46548a" key="#[payload.domain]" objectStore="application_store" />
+		</foreach>
+             
+   </sub-flow>
+	<flow name="cacheInit_handleSubOrgs"
+         doc:id="659465c9-5374-4749-8e32-d324886e2c32"
+         maxConcurrency="5">
+		<choice doc:name="any subOrgs?" doc:id="731123b8-795c-483a-8823-dcf8ff543b01" >
+			<when expression="#[sizeOf(payload.subOrganizationIds) &gt; 0]">
+				<foreach doc:name="For Each subOrganization" doc:id="6c5b07f7-fe2d-46e7-a372-845716c7c535" collection="#[payload.subOrganizationIds]">
+         <set-variable value="#[payload]" doc:name="current orgId" doc:id="843c8043-7c5e-4dac-93d3-a35a66d7c3b6" variableName="orgId" />
+         <flow-ref doc:name="cacheInit_getRoleGroups" doc:id="3288fcf9-5113-4783-9be6-8e43365f5a8b" name="cacheInit_getRoleGroups" target="discard"/>
+					<flow-ref doc:name="cacheInit_getOrganizationByID" doc:id="2b4ae267-2add-47a6-925c-2d014b8bc3d5" name="cacheInit_getOrganizationByID" />
+					<flow-ref doc:name="cacheInit_handleOrganization_environments" doc:id="46005785-48e9-407c-a93a-f53e6fdd2da0" name="cacheInit_handleOrganization_environments" />
+					<flow-ref doc:name="cacheInit_handleSubOrgs" doc:id="513c0ff8-b8f5-4583-9cf5-009bb5a955ba" name="cacheInit_handleSubOrgs" />
+      </foreach>
+			</when>
+		</choice>
+   </flow>
+  
+</mule>

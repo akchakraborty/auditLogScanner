@@ -1,0 +1,58 @@
+#%RAML 1.0
+title: Hello world # required title
+
+/forcestartcaching:
+  get: 
+    responses: 
+      200: 
+        body: 
+          application/json:
+            example:
+              {
+                "message": "Hello world"
+              }
+/forcequeryendpoint:
+  get: 
+    responses: 
+      200: 
+        body: 
+          application/json:
+            example:
+              {
+                "message": "Hello world"
+              }
+/testTransform:
+  post:
+    responses:
+      200: 
+        body:
+          application/json: 
+/currenttoken:
+  get: 
+    responses: 
+      200: 
+        body: 
+          application/json:
+            example:
+              {
+                "message": "Hello world"
+              }
+/storeditems:
+  get: 
+    responses: 
+      200: 
+        body: 
+          application/json:
+            example:
+              {
+                "message": "Hello world"
+              }
+/getinfofromutil:
+  get: 
+    responses: 
+      200: 
+        body: 
+          application/text:
+            example:
+              "Hello World"
+          

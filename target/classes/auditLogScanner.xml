@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+    <flow name="something-api-main">
+        <http:listener path="/api/*" config-ref="HTTP_Listener_config">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json"
+}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="myRAMLFileHere-config" />
+    </flow>
+    <flow name="post:\testTransform:myRAMLFileHere-config">
+        <flow-ref doc:name="testTransform" doc:id="af8bd7f7-a58d-46f5-9fbb-3dd91684dfb7" name="testTransform" />
+    </flow>
+    <flow name="get:\currenttoken:myRAMLFileHere-config">
+        <os:retrieve doc:name="Retrieve" doc:id="9ce39ae3-1d9e-4eb1-a970-3782b49cd300" key="token" objectStore="tokenOS" />
+    </flow>
+    <flow name="get:\storeditems:myRAMLFileHere-config">
+        <scatter-gather doc:name="Scatter-Gather" doc:id="a6f280d9-3e7a-4137-87bf-da13cd22481a">
+            <route>
+                <os:retrieve-all doc:name="Retrieve all" doc:id="5e76ff4a-cacd-46b9-955b-83631282cd7a" objectStore="application_store" target="application" />
+            </route>
+            <route>
+                <os:retrieve-all doc:name="Retrieve all" doc:id="12ca9c33-a3e6-4ea0-a53b-ea13d7f6bef2" objectStore="businessGroup_store" target="businessGroup" />
+            </route>
+            <route>
+                <os:retrieve-all doc:name="Retrieve all" doc:id="779c8385-08d9-4744-adb1-56aa30976126" objectStore="environment_store" target="environment" />
+            </route>
+            <route>
+                <os:retrieve-all doc:name="Retrieve all" doc:id="e70ab4f5-0006-4642-b52c-82fde46b38b2" objectStore="roleGroup_store" target="roleGroup" />
+            </route>
+            <route>
+                <os:retrieve-all doc:name="Retrieve all" doc:id="dd7cc9d0-126b-4082-919f-0380a45213e5" objectStore="user_store" target="user" />
+            </route>
+        </scatter-gather>
+        <ee:transform doc:name="Transform Message" doc:id="7b84c161-5749-4610-b5c2-5d41b9913247">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	application:		vars.application,
+	businessGroup: 	vars.businessGroup,
+	environment:		vars.environment,
+	roleGroup:		vars.roleGroup,
+	user:			vars.user
+	
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="get:\forcequeryendpoint:myRAMLFileHere-config">
+        <flow-ref doc:name="auditLogReading_queryAPI" doc:id="03d9e5db-e49f-4d7b-9c8f-06728046624c" name="auditLogReading_queryAPI" />
+    </flow>
+    <flow name="get:\forcestartcaching:myRAMLFileHere-config">
+        <flow-ref doc:name="cacheInit_controller" doc:id="559bd816-4c9a-4dff-896e-626e0d177ce1" name="cacheInit_controller" />
+    </flow>
+    <flow name="get:\getinfofromutil:myRAMLFileHere-config">
+		<flow-ref doc:name="Flow Reference" doc:id="5b2d8558-a154-4786-aa80-8ffbe2105a6c" name="commonutils_setPayload"/>
+		<logger level="INFO" doc:name="Logger" doc:id="93c736ea-02f0-4c2f-8b2d-488623b343e0" />
+    </flow>
+    <sub-flow name="testTransform" doc:id="4ed229e4-0f1e-412a-9cb9-031b9fd57ce0">
+        <flow-ref doc:name="auditLogDataEnrichment_selectDataType" doc:id="cb9f7dda-f23f-4fba-ac42-69ed513e88b7" name="auditLogDataEnrichment_selectDataType" />
+    </sub-flow>
+    <sub-flow name="auditLogScannerSub_Flow" doc:id="a2cfd60e-69fa-4bd8-897d-d54e883b771b">
+        <logger level="INFO" doc:name="Logger" doc:id="98067786-8197-4106-b064-12a6fe0c4908" />
+    </sub-flow>
+</mule>
