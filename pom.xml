@@ -16,7 +16,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <springVersion>4.3.17.RELEASE</springVersion>
-        <springSecurityVersion>4.2.6.RELEASE</springSecurityVersion>
+        <springSecurityVersion>5.3.3.RELEASE</springSecurityVersion>
 
     <munit.version>2.1.4</munit.version>
     </properties>
